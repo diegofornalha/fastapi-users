@@ -134,6 +134,113 @@ Resposta esperada:
 - Esta rota demonstra como acessar dados do usuário em rotas protegidas
 - Útil como exemplo para criar novas rotas protegidas
 
+## 6. Gerenciamento de Usuário
+
+```bash
+# Obter informações do usuário atual
+curl -X GET $API_URL/users/me \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Resposta esperada:
+```json
+{
+  "id": 1,
+  "email": "test@example.com",
+  "is_active": true,
+  "is_superuser": false,
+  "is_verified": false
+}
+```
+
+**Observações**:
+- Retorna dados completos do usuário autenticado
+- Requer token JWT válido
+- Útil para verificar status de verificação e permissões
+
+## 7. Atualização de Dados do Usuário
+
+```bash
+# Atualizar senha do usuário
+curl -X PATCH $API_URL/users/me \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"password": "novasenha123"}'
+```
+
+Resposta esperada:
+```json
+{
+  "id": 1,
+  "email": "test@example.com",
+  "is_active": true,
+  "is_superuser": false,
+  "is_verified": false
+}
+```
+
+**Observações**:
+- Permite atualizar dados do próprio usuário
+- A senha deve ter pelo menos 3 caracteres
+- Requer autenticação válida
+
+## 8. Recuperação de Senha
+
+```bash
+# Solicitar token de recuperação de senha
+curl -X POST $API_URL/auth/forgot-password \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$EMAIL\"}"
+```
+
+Resposta esperada:
+```json
+null
+```
+
+**Observações**:
+- Status 202 indica que a solicitação foi aceita
+- Em produção, envia email com token de redefinição
+- O token gerado é válido por tempo limitado
+- Verificar logs para o token em ambiente de desenvolvimento
+
+## 9. Verificação de Email
+
+```bash
+# Solicitar token de verificação de email
+curl -X POST $API_URL/auth/request-verify-token \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$EMAIL\"}"
+```
+
+Resposta esperada:
+```json
+null
+```
+
+**Observações**:
+- Status 202 indica que a solicitação foi aceita
+- Em produção, envia email com link de verificação
+- Verificar logs para o token em ambiente de desenvolvimento
+- A verificação altera o status `is_verified` para true
+
+## 10. Logout
+
+```bash
+# Fazer logout (invalidar token)
+curl -X POST $API_URL/auth/jwt/logout \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Resposta esperada:
+- Status 204 No Content
+
+**Observações**:
+- Invalida o token JWT atual
+- Requer token válido para logout
+- Não retorna conteúdo no corpo da resposta
+- Após logout, o token não pode mais ser usado
+
 ## Possíveis Erros e Soluções
 
 1. **401 Unauthorized**
@@ -163,27 +270,30 @@ Resposta esperada:
      - Verificar conexão com banco de dados
      - Reiniciar o servidor se necessário
 
-## Dicas e Boas Práticas
+## Dicas Adicionais
 
-1. **Logs e Debugging**:
-   - Mantenha o terminal com uvicorn aberto para ver logs
-   - Use o parâmetro `-v` no curl para detalhes da requisição
-   - Configure o nível de log adequado (--log-level debug)
+1. **Tokens nos Logs**:
+   - Em desenvolvimento, os tokens são exibidos nos logs
+   - Útil para testar redefinição de senha e verificação
+   - Em produção, os tokens são enviados por email
 
-2. **Gestão de Tokens**:
-   - Armazene o token em variável de ambiente para facilitar
-   - Lembre que o token expira em 1 hora
-   - Use jwt.io para decodificar e inspecionar tokens
+2. **Segurança**:
+   - Sempre use HTTPS em produção
+   - Não compartilhe ou exponha tokens
+   - Implemente rate limiting em produção
+   - Configure servidor de email para notificações reais
 
-3. **Banco de Dados**:
-   - Delete test.db para começar do zero
-   - Backup do banco antes de testes destrutivos
-   - Verifique permissões do arquivo do banco
+3. **Fluxos de Usuário**:
+   - Registro → Verificação → Login
+   - Esqueci senha → Redefinição → Login
+   - Login → Atualização de dados → Logout
 
-4. **Segurança**:
-   - Não use senhas fracas mesmo em testes
-   - Não compartilhe tokens
-   - Use HTTPS em produção
+4. **Ambiente de Produção**:
+   - Configure servidor SMTP
+   - Implemente templates de email
+   - Adicione logging seguro
+   - Configure rate limiting
+   - Use variáveis de ambiente para secrets
 
 ## Scripts Úteis
 
